@@ -11,16 +11,17 @@
 
 int main(void)
 {
+    int fd;
     uint8_t tx_buffer[1] = {0x00};
     uint8_t rx_buffer[1] = {0x00};
 
-    UART_Init();
+    fd = UART_Init();
 
     while (1)
     {
-        UART_Write(UART_Init(), tx_buffer, 1);
+        UART_Write(fd, tx_buffer, 1);
         printf("tx : %d\n", tx_buffer[0]);
-        UART_Read(UART_Init(), rx_buffer, 1);
+        UART_Read(fd, rx_buffer, 1);
         printf("rx : %d\n", rx_buffer[0]);
         sleep(1);
     }
