@@ -13,6 +13,7 @@ static int32_t uart_fd;
 
 int main(void)
 {
+    int32_t status = IO_UART_SUCCESS;
     uint8_t tx_buffer[1] = {0x01};
     uint8_t rx_buffer[1] = {0x00};
 
@@ -20,12 +21,19 @@ int main(void)
 
     while (1)
     {
+        status = IO_UART_SUCCESS;
         rx_buffer[0] = 0x00;
         
-        UART_Write(tx_buffer, 1);
+        if ((status = UART_Write(tx_buffer, 1)) < 0)
+        {
+            printf("UART Error (Error code : %d)\n", status);
+        }
         printf("tx : %d\n", tx_buffer[0]);
 
-        UART_Read(rx_buffer, 1);
+        if ((status = UART_Read(rx_buffer, 1)) < 0)
+        {
+            printf("UART Error (Error code : %d)\n", status);
+        }
         printf("rx : %d\n", rx_buffer[0]);
 
         sleep(1);
