@@ -9,35 +9,38 @@
 #define UART_DEVICE "/dev/ttyS0" // replace
 #define UART_BAUDRATE B115200 // replace
 
+static int32_t uart_fd;
+
 int main(void)
 {
-    int fd;
-    uint8_t tx_buffer[1] = {0x00};
+    uint8_t tx_buffer[1] = {0x01};
     uint8_t rx_buffer[1] = {0x00};
 
-    fd = UART_Init();
+    UART_Init();
 
     while (1)
     {
-        UART_Write(fd, tx_buffer, 1);
+        rx_buffer[0] = 0x00;
+        
+        UART_Write(tx_buffer, 1);
         printf("tx : %d\n", tx_buffer[0]);
-        UART_Read(fd, rx_buffer, 1);
+
+        UART_Read(rx_buffer, 1);
         printf("rx : %d\n", rx_buffer[0]);
+
         sleep(1);
     }
 }
 
-int UART_Init(void)
+int32_t UART_Init(void)
 {
-    int fd;
-
-    if ((fd = open(UART_DEVICE, O_RDWR | O_NOCTTY | O_NONBLOCK)) < 0)
+    if ((uart_fd = open(UART_DEVICE, O_RDWR | O_NOCTTY | O_NONBLOCK)) < 0)
     {
-        printf("Open error!\n");
+        return IO_UART_ERROR_OPEN;
     }
 
     struct termios options;
-    tcgetattr(fd, &options);
+    tcgetattr(uart_fd, &options);
     cfsetispeed(&options, UART_BAUDRATE);
     cfsetospeed(&options, UART_BAUDRATE);
     options.c_cflag |= (CLOCAL | CREAD);
@@ -50,23 +53,35 @@ int UART_Init(void)
 	options.c_oflag &= ~(OCRNL | ONLCR | ONLRET | ONOCR | OFILL | OPOST);
 	options.c_cc[VTIME] = 0;
 	options.c_cc[VMIN] = 1;
-    tcsetattr(fd, TCSANOW, &options);
+    tcsetattr(uart_fd, TCSANOW, &options);
 
-    return fd;
+    return IO_UART_SUCCESS;
 }
 
-void UART_Read(int fd, void *rx_buffer, uint8_t len)
+int32_t UART_Read(void *rx_buffer, uint8_t len)
 {
-    if (read(fd, rx_buffer, len) < 0)
+    if (uart_fd < 0)
     {
-        printf("Read error!\n");
+        return IO_UART_ERROR_INIT;
     }
+    if (read(uart_fd, rx_buffer, len) < 0)
+    {
+        return IO_UART_ERROR_READ;
+    }
+
+    return IO_UART_SUCCESS;
 }
 
-void UART_Write(int fd, void *tx_buffer, uint8_t len)
+int32_t UART_Write(void *tx_buffer, uint8_t len)
 {
-    if (write(fd, tx_buffer, len) < 0)
+    if (uart_fd < 0)
     {
-        printf("Write error!\n");
+        return IO_UART_ERROR_INIT;
     }
+    if (write(uart_fd, tx_buffer, len) < 0)
+    {
+        return IO_UART_ERROR_WRITE;
+    }
+    
+    return IO_UART_SUCCESS;
 }
